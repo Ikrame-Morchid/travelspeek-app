@@ -1,0 +1,25 @@
+# ========================================
+# DÉPENDANCES TRADUCTION IMAGE COMPLÈTE
+# Compatible Python 3.12
+# ========================================
+
+# OCR (Reconnaissance de texte dans les images)
+easyocr==1.7.2
+
+# Détection de contenu haineux/gros mots
+better-profanity==0.7.0
+
+# Traitement d'images
+Pillow==10.4.0
+opencv-python==4.10.0.84  # AJOUTÉ pour prétraitement
+
+# Deep Learning (requis par EasyOCR)
+# Versions compatibles Python 3.12
+torch==2.5.1
+torchvision==0.20.1
+
+# Traduction (déjà installé normalement)
+deep-translator==1.11.4
+
+# Utilitaires
+numpy>=1.24.0

@@ -1,4 +1,4 @@
-package com.example.travelspeek_app
+package com.travelspeek.app
 
 import io.flutter.embedding.android.FlutterActivity
 

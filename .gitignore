@@ -1,45 +1,63 @@
-# Miscellaneous
-*.class
-*.log
+# ========================================
+# .gitignore - TravelSpeek
+# ========================================
+
+# Python
+__pycache__/
+*.py[cod]
+*.pyo
 *.pyc
-*.swp
-.DS_Store
-.atom/
-.build/
-.buildlog/
-.history
-.svn/
-.swiftpm/
-migrate_working_dir/
+venv/
+.venv/
+env/
 
-# IntelliJ related
-*.iml
-*.ipr
-*.iws
-.idea/
+# Variables d'environnement (NE JAMAIS pusher)
+.env
+.env.local
+.env.production
 
-# The .vscode folder contains launch configuration and tasks you configure in
-# VS Code which you may wish to be included in version control, so this line
-# is commented out by default.
-#.vscode/
+# Bases de données SQLite locales (Render les gère)
+*.db
+*.sqlite3
 
-# Flutter/Dart/Pub related
-**/doc/api/
-**/ios/Flutter/.last_build_id
+# Fichiers uploadés localement
+backend/audio_uploads/
+backend/audio_outputs/
+backend/image_uploads/
+
+# Flutter/Dart
+build/
 .dart_tool/
+.flutter-plugins
 .flutter-plugins-dependencies
-.pub-cache/
-.pub/
-/build/
-/coverage/
+*.iml
+.idea/
+.gradle/
+local.properties
 
-# Symbolication related
-app.*.symbols
+# Logs
+*.log
+replay_*.log
+hs_err_*.log
 
-# Obfuscation related
-app.*.map.json
+# OS
+.DS_Store
+Thumbs.db
 
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
+# Scripts utilitaires (pas nécessaires en prod)
+backend/add_name_columns.py
+backend/add_translations_column.py
+backend/check_db.py
+backend/check_images.py
+backend/check_missing_translations.py
+backend/check_translations.py
+backend/diagnostic_complet.py
+backend/fix_description.py
+backend/import_data.py
+backend/import_monuments.py
+backend/migrate_translations.py
+backend/quick_check.py
+backend/translate_flutter_auto.py
+backend/translate_monuments.py
+backend/translate_names_fix.py
+backend/create_feedback_table.py

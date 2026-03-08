@@ -1,0 +1,20 @@
+# ========================================
+# requirements_voice.txt - TRADUCTION VOCALE
+# ========================================
+
+# Transcription audio → texte
+faster-whisper==1.1.0
+
+# Traduction texte
+deep-translator==1.11.4
+
+# Synthèse vocale (texte → audio)
+gTTS==2.5.4
+
+# Manipulation audio
+pydub==0.25.1
+
+# Dépendances FastAPI (déjà installées normalement)
+# fastapi
+# uvicorn[standard]
+# python-multipart

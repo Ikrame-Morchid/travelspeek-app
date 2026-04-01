@@ -17,7 +17,6 @@ import '../presentation/screens/monuments/monuments_list_screen.dart';
 import '../presentation/screens/monuments/monuments_grid_screen.dart';
 import '../presentation/screens/monuments/monument_detail_screen.dart';
 import '../presentation/screens/history/history_screen.dart';
-import '../presentation/screens/test/backend_test_screen.dart';
 import '../data/models/monument_model.dart';
 
 class AppRoutes {
@@ -41,7 +40,6 @@ class AppRoutes {
   static const String privacy         = '/privacy';
   static const String helpSupport     = '/help-support';
   static const String settings        = '/settings';
-  static const String backendTest     = '/backend-test';
 
   static Route<dynamic> generateRoute(RouteSettings settings) {
     switch (settings.name) {
@@ -119,9 +117,6 @@ class AppRoutes {
 
       case history:
         return MaterialPageRoute(builder: (_) => const HistoryScreen());
-
-      case backendTest:
-        return MaterialPageRoute(builder: (_) => const BackendTestScreen());
 
       case favorites:
         return MaterialPageRoute(

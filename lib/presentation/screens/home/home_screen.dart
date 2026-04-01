@@ -1,7 +1,7 @@
+import 'dart:io';
 import 'package:flutter/material.dart';
 import 'package:provider/provider.dart';
 import 'package:shared_preferences/shared_preferences.dart';
-import 'dart:io';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/l10n/string_extensions.dart';
 import '../../../data/models/historique_model.dart';
@@ -22,15 +22,12 @@ class HomeScreen extends StatefulWidget {
 class _HomeScreenState extends State<HomeScreen> {
   int _selectedIndex = 0;
   String? _profileImagePath;
-  
-  // ✅ NOUVELLE SOLUTION : ScaffoldState stocké
   late GlobalKey<ScaffoldState> _scaffoldKey;
 
   @override
   void initState() {
     super.initState();
-    _scaffoldKey = GlobalKey<ScaffoldState>(); // ✅ Initialiser dans initState
-    
+    _scaffoldKey = GlobalKey<ScaffoldState>();
     WidgetsBinding.instance.addPostFrameCallback((_) async {
       context.read<HomeProvider>().loadMockData();
       context.read<MonumentProvider>().loadMonuments();
@@ -54,14 +51,11 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
-  // ✅ MÉTHODE DIRECTE POUR OUVRIR LE DRAWER
   void _openDrawer() {
-    print('🔍 Tentative ouverture drawer...');
     try {
       _scaffoldKey.currentState?.openEndDrawer();
-      print('✅ Drawer ouvert');
     } catch (e) {
-      print('❌ Erreur ouverture drawer: $e');
+      debugPrint('❌ Erreur ouverture drawer: $e');
     }
   }
 
@@ -110,94 +104,235 @@ class _HomeScreenState extends State<HomeScreen> {
     }
   }
 
+  // ✅ Détecter si traduction vocale ou image
+  bool _isImageTranslation(Historique item) {
+    return item.subtitle?.contains('[IMG]') == true;
+  }
+
+  // ✅ Afficher le subtitle sans le marqueur [IMG]
+  String _getDisplaySubtitle(Historique item) {
+    return item.subtitle?.replaceAll(' [IMG]', '') ?? '';
+  }
+
   void _openTranslationDetail(Historique item, bool isDark) {
+    final theme = Theme.of(context);
     final parts = item.subtitle?.split('→') ?? [];
     final from = parts.isNotEmpty ? parts[0].trim() : '?';
-    final to = parts.length > 1 ? parts[1].trim() : '?';
-    final dialogBg = isDark ? const Color(0xFF1A2530) : Colors.white;
-    final textColor = isDark ? Colors.white : const Color(0xFF2D2D2D);
-    final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
-    final chipBg = isDark ? Colors.grey[700]! : Colors.grey[200]!;
-    final chipText = isDark ? Colors.white : const Color(0xFF2D2D2D);
+    var to = parts.length > 1 ? parts[1].trim() : '?';
+    to = to.replaceAll('[IMG]', '').trim();
+    final isImage = _isImageTranslation(item);
 
     showDialog(
       context: context,
       builder: (_) => Dialog(
-        backgroundColor: dialogBg,
+        backgroundColor: theme.colorScheme.surface,
         shape: RoundedRectangleBorder(
             borderRadius: BorderRadius.circular(20)),
-        child: Padding(
-          padding: const EdgeInsets.all(24),
+        child: ConstrainedBox(
+          constraints: BoxConstraints(
+            maxHeight: MediaQuery.of(context).size.height * 0.85,
+          ),
           child: Column(
             mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              Row(children: [
-                Container(
-                  padding: const EdgeInsets.all(8),
-                  decoration: BoxDecoration(
-                      color: Colors.green.withOpacity(0.1),
-                      borderRadius: BorderRadius.circular(10)),
-                  child: const Icon(Icons.translate,
-                      color: Colors.green, size: 20),
+
+              // ── Header fixe ──
+              Container(
+                padding: const EdgeInsets.all(20),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withOpacity(0.08),
+                  borderRadius: const BorderRadius.vertical(
+                      top: Radius.circular(20)),
                 ),
-                const SizedBox(width: 12),
-                _langChip(from, chipBg, chipText),
-                const SizedBox(width: 6),
-                const Icon(Icons.arrow_forward,
-                    size: 14, color: Colors.grey),
-                const SizedBox(width: 6),
-                _langChip(to, chipBg, chipText),
-                const Spacer(),
-                Text(item.timeAgo,
-                    style: const TextStyle(
-                        fontSize: 11, color: Colors.grey)),
-              ]),
-              const SizedBox(height: 16),
-              Divider(color: isDark ? Colors.grey[700] : null),
-              const SizedBox(height: 12),
-              Text('original_text'.tr(context),
-                  style: TextStyle(
-                      fontSize: 12,
-                      fontWeight: FontWeight.w600,
-                      color: subtitleColor)),
-              const SizedBox(height: 6),
-              Text(item.title,
-                  style: TextStyle(fontSize: 15, color: textColor)),
-              if (item.details != null && item.details!.isNotEmpty) ...[
-                const SizedBox(height: 16),
-                Text('translation_label'.tr(context),
-                    style: TextStyle(
-                        fontSize: 12,
-                        fontWeight: FontWeight.w600,
-                        color: subtitleColor)),
-                const SizedBox(height: 6),
-                Container(
+                child: Column(children: [
+                  Row(children: [
+                    // ✅ Badge vocal ou image
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 10, vertical: 6),
+                      decoration: BoxDecoration(
+                        color: isImage
+                            ? Colors.blue.withOpacity(0.15)
+                            : Colors.green.withOpacity(0.15),
+                        borderRadius: BorderRadius.circular(20),
+                        border: Border.all(
+                          color: isImage
+                              ? Colors.blue.withOpacity(0.4)
+                              : Colors.green.withOpacity(0.4),
+                        ),
+                      ),
+                      child: Row(
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          Icon(
+                            isImage
+                                ? Icons.image_outlined
+                                : Icons.mic_outlined,
+                            size: 13,
+                            color: isImage ? Colors.blue : Colors.green,
+                          ),
+                          const SizedBox(width: 4),
+                          Text(
+                            isImage
+                                ? 'translation_image'.tr(context)
+                                : 'translation_voice'.tr(context),
+                            style: TextStyle(
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              color: isImage ? Colors.blue : Colors.green,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    const Spacer(),
+                    Text(item.timeAgo,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: theme.textTheme.bodyMedium?.color)),
+                  ]),
+                  const SizedBox(height: 12),
+                  Row(children: [
+                    Container(
+                      width: 36,
+                      height: 36,
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withOpacity(0.15),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(Icons.translate,
+                          color: AppColors.primary, size: 18),
+                    ),
+                    const SizedBox(width: 12),
+                    _langChip(
+                      from,
+                      theme.dividerTheme.color?.withOpacity(0.3) ??
+                          Colors.grey,
+                      theme.colorScheme.onSurface,
+                    ),
+                    const SizedBox(width: 8),
+                    Icon(Icons.arrow_forward,
+                        size: 14,
+                        color: theme.textTheme.bodyMedium?.color),
+                    const SizedBox(width: 8),
+                    _langChip(
+                      to,
+                      theme.dividerTheme.color?.withOpacity(0.3) ??
+                          Colors.grey,
+                      theme.colorScheme.onSurface,
+                    ),
+                  ]),
+                ]),
+              ),
+
+              // ── Texte original — hauteur fixe + scroll ──
+              Padding(
+                padding: const EdgeInsets.fromLTRB(20, 16, 20, 0),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(children: [
+                      Icon(Icons.text_fields,
+                          size: 14,
+                          color: theme.textTheme.bodyMedium?.color),
+                      const SizedBox(width: 6),
+                      Text('original_text'.tr(context),
+                          style: TextStyle(
+                              fontSize: 12,
+                              fontWeight: FontWeight.w600,
+                              color: theme.textTheme.bodyMedium?.color)),
+                    ]),
+                    const SizedBox(height: 8),
+                    Container(
+                      width: double.infinity,
+                      height: 170,
+                      padding: const EdgeInsets.all(12),
+                      decoration: BoxDecoration(
+                        color:
+                            theme.dividerTheme.color?.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: theme.dividerTheme.color
+                                    ?.withOpacity(0.2) ??
+                                Colors.grey.withOpacity(0.2)),
+                      ),
+                      child: SingleChildScrollView(
+                        child: Text(
+                          item.title,
+                          style: TextStyle(
+                              fontSize: 15,
+                              color: theme.colorScheme.onSurface,
+                              height: 1.5),
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+
+              // ── Traduction — hauteur fixe + scroll ──
+              if (item.details != null && item.details!.isNotEmpty)
+                Padding(
+                  padding: const EdgeInsets.fromLTRB(20, 14, 20, 0),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(children: [
+                        Icon(Icons.translate,
+                            size: 14, color: AppColors.primary),
+                        const SizedBox(width: 6),
+                        Text('translation_label'.tr(context),
+                            style: TextStyle(
+                                fontSize: 12,
+                                fontWeight: FontWeight.w600,
+                                color:
+                                    theme.textTheme.bodyMedium?.color)),
+                      ]),
+                      const SizedBox(height: 8),
+                      Container(
+                        width: double.infinity,
+                        height: 170,
+                        padding: const EdgeInsets.all(12),
+                        decoration: BoxDecoration(
+                          color: AppColors.primary.withOpacity(0.07),
+                          borderRadius: BorderRadius.circular(10),
+                          border: Border.all(
+                              color:
+                                  AppColors.primary.withOpacity(0.25)),
+                        ),
+                        child: SingleChildScrollView(
+                          child: Text(
+                            item.details!,
+                            style: TextStyle(
+                                fontSize: 16,
+                                color: AppColors.primary,
+                                fontWeight: FontWeight.w600,
+                                height: 1.5),
+                          ),
+                        ),
+                      ),
+                    ],
+                  ),
+                ),
+
+              // ── Bouton fermer fixe ──
+              Padding(
+                padding: const EdgeInsets.all(20),
+                child: SizedBox(
                   width: double.infinity,
-                  padding: const EdgeInsets.all(12),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withOpacity(0.07),
-                    borderRadius: BorderRadius.circular(10),
+                  child: ElevatedButton(
+                    onPressed: () => Navigator.pop(context),
+                    style: ElevatedButton.styleFrom(
+                      backgroundColor: AppColors.primary,
+                      shape: RoundedRectangleBorder(
+                          borderRadius: BorderRadius.circular(12)),
+                      padding:
+                          const EdgeInsets.symmetric(vertical: 14),
+                    ),
+                    child: Text('close'.tr(context),
+                        style: const TextStyle(
+                            color: Colors.white, fontSize: 15)),
                   ),
-                  child: Text(item.details!,
-                      style: TextStyle(
-                          fontSize: 16,
-                          color: AppColors.primary,
-                          fontWeight: FontWeight.w600)),
-                ),
-              ],
-              const SizedBox(height: 20),
-              SizedBox(
-                width: double.infinity,
-                child: ElevatedButton(
-                  onPressed: () => Navigator.pop(context),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppColors.primary,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                  child: Text('close'.tr(context),
-                      style: const TextStyle(color: Colors.white)),
                 ),
               ),
             ],
@@ -207,8 +342,10 @@ class _HomeScreenState extends State<HomeScreen> {
     );
   }
 
-  Widget _langChip(String label, Color bg, Color textColor) => Container(
-        padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+  Widget _langChip(String label, Color bg, Color textColor) =>
+      Container(
+        padding:
+            const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
         decoration: BoxDecoration(
             color: bg, borderRadius: BorderRadius.circular(6)),
         child: Text(label,
@@ -221,10 +358,11 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final isDark = context.watch<ThemeProvider>().isDark;
-    final bgColor = isDark ? const Color(0xFF0F1923) : const Color(0xFFF8F9FA);
+    final bgColor =
+        isDark ? const Color(0xFF0F1923) : const Color(0xFFF8F9FA);
 
     return Scaffold(
-      key: _scaffoldKey, // ✅ Clé attachée
+      key: _scaffoldKey,
       endDrawer: const AppDrawer(),
       backgroundColor: bgColor,
       body: _buildBody(isDark),
@@ -333,7 +471,6 @@ class _HomeScreenState extends State<HomeScreen> {
                           fontWeight: FontWeight.w500)),
                 ]),
           ),
-          // ✅ BOUTON MENU SIMPLIFIÉ
           InkWell(
             onTap: _openDrawer,
             borderRadius: BorderRadius.circular(8),
@@ -441,8 +578,7 @@ class _HomeScreenState extends State<HomeScreen> {
               ],
               if (searches.isNotEmpty) ...[
                 _categoryHeader(Icons.search,
-                    'searches_label'.tr(context),
-                    const Color(0xFF7C3AED)),
+                    'searches_label'.tr(context), const Color(0xFF7C3AED)),
                 const SizedBox(height: 8),
                 ...searches.map((item) => Padding(
                       padding: const EdgeInsets.only(bottom: 8),
@@ -507,8 +643,8 @@ class _HomeScreenState extends State<HomeScreen> {
           decoration: BoxDecoration(
               color: const Color(0xFFE8F5F4),
               borderRadius: BorderRadius.circular(11)),
-          child:
-              const Icon(Icons.wb_sunny_outlined, color: AppColors.primary, size: 22),
+          child: const Icon(Icons.wb_sunny_outlined,
+              color: AppColors.primary, size: 22),
         ),
         const SizedBox(width: 12),
         Expanded(
@@ -522,7 +658,8 @@ class _HomeScreenState extends State<HomeScreen> {
                         color: textColor)),
                 const SizedBox(height: 3),
                 Text('start_exploring'.tr(context),
-                    style: TextStyle(fontSize: 12, color: subtitleColor)),
+                    style:
+                        TextStyle(fontSize: 12, color: subtitleColor)),
               ]),
         ),
       ]),
@@ -533,6 +670,7 @@ class _HomeScreenState extends State<HomeScreen> {
     final cardColor = isDark ? const Color(0xFF1A2530) : Colors.white;
     final textColor = isDark ? Colors.white : const Color(0xFF2D2D2D);
     final subtitleColor = isDark ? Colors.grey[400]! : Colors.grey[600]!;
+    final isImage = _isImageTranslation(item);
 
     IconData icon;
     Color iconBg;
@@ -540,9 +678,11 @@ class _HomeScreenState extends State<HomeScreen> {
 
     switch (item.type) {
       case ActivityType.translation:
-        icon = Icons.translate;
-        iconBg = const Color(0xFFE8F5F4);
-        iconColor = AppColors.primary;
+        icon = isImage ? Icons.image_outlined : Icons.mic_outlined;
+        iconBg = isImage
+            ? const Color(0xFFE3F2FD)
+            : const Color(0xFFE8F5F4);
+        iconColor = isImage ? Colors.blue : AppColors.primary;
         break;
       case ActivityType.monument:
         icon = Icons.account_balance;
@@ -584,7 +724,8 @@ class _HomeScreenState extends State<HomeScreen> {
           borderRadius: BorderRadius.circular(14),
           boxShadow: [
             BoxShadow(
-                color: Colors.black.withOpacity(isDark ? 0.2 : 0.03),
+                color:
+                    Colors.black.withOpacity(isDark ? 0.2 : 0.03),
                 blurRadius: 8,
                 offset: const Offset(0, 2))
           ],
@@ -606,6 +747,31 @@ class _HomeScreenState extends State<HomeScreen> {
             child: Column(
                 crossAxisAlignment: CrossAxisAlignment.start,
                 children: [
+                  // ✅ Badge vocal/image dans la liste home
+                  if (item.type == ActivityType.translation) ...[
+                    Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 7, vertical: 3),
+                      margin: const EdgeInsets.only(bottom: 4),
+                      decoration: BoxDecoration(
+                        color: isImage
+                            ? Colors.blue.withOpacity(0.1)
+                            : Colors.green.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                      ),
+                      child: Text(
+                        isImage
+                            ? 'translation_image'.tr(context)
+                            : 'translation_voice'.tr(context),
+                        style: TextStyle(
+                          fontSize: 9,
+                          fontWeight: FontWeight.w700,
+                          color:
+                              isImage ? Colors.blue : Colors.green,
+                        ),
+                      ),
+                    ),
+                  ],
                   Text('"${item.title}"',
                       style: TextStyle(
                           fontSize: 14,
@@ -614,9 +780,23 @@ class _HomeScreenState extends State<HomeScreen> {
                       maxLines: 1,
                       overflow: TextOverflow.ellipsis),
                   const SizedBox(height: 3),
-                  Text('${item.subtitle ?? ''} • ${item.timeAgo}',
-                      style:
-                          TextStyle(fontSize: 12, color: subtitleColor)),
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(_getDisplaySubtitle(item),
+                            style: TextStyle(
+                                fontSize: 12, color: subtitleColor),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis),
+                      ),
+                      const SizedBox(width: 6),
+                      Text('• ${item.timeAgo}',
+                          style: TextStyle(
+                              fontSize: 12, color: subtitleColor),
+                          maxLines: 1,
+                          overflow: TextOverflow.clip),
+                    ],
+                  ),
                 ]),
           ),
           Icon(Icons.arrow_forward_ios,
@@ -747,7 +927,8 @@ class _HomeScreenState extends State<HomeScreen> {
             const SizedBox(height: 12),
             Expanded(
               child: GestureDetector(
-                onTap: () => Navigator.pushNamed(context, '/chatbot'),
+                onTap: () =>
+                    Navigator.pushNamed(context, '/chatbot'),
                 child: Container(
                   width: double.infinity,
                   decoration: BoxDecoration(
@@ -824,7 +1005,8 @@ class _HomeScreenState extends State<HomeScreen> {
                   child: monumentImage != null
                       ? Image.network(monumentImage,
                           fit: BoxFit.cover,
-                          errorBuilder: (_, __, ___) => _moroccoFallback())
+                          errorBuilder: (_, __, ___) =>
+                              _moroccoFallback())
                       : _moroccoFallback(),
                 ),
                 Positioned.fill(
@@ -873,7 +1055,8 @@ class _HomeScreenState extends State<HomeScreen> {
                             const SizedBox(height: 3),
                             Text('ancient_wonders'.tr(context),
                                 style: const TextStyle(
-                                    color: Colors.white70, fontSize: 11)),
+                                    color: Colors.white70,
+                                    fontSize: 11)),
                           ]),
                     ),
                     Container(
@@ -896,8 +1079,10 @@ class _HomeScreenState extends State<HomeScreen> {
 
   Widget _moroccoFallback() => Container(
         decoration: const BoxDecoration(
-            gradient: LinearGradient(
-                colors: [Color(0xFF8B6F47), Color(0xFFA68A64)])),
+            gradient: LinearGradient(colors: [
+          Color(0xFF8B6F47),
+          Color(0xFFA68A64)
+        ])),
         child: const Center(
             child: Icon(Icons.account_balance,
                 size: 50, color: Colors.white54)),

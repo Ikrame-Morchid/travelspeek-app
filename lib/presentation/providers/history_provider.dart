@@ -74,12 +74,14 @@ class HistoryProvider with ChangeNotifier {
     required String translatedText,
     required String sourceLang,
     required String targetLang,
+    bool isImageTranslation = false,
   }) async {
     final success = await _repository.addTranslationToHistory(
       sourceText: sourceText,
       translatedText: translatedText,
       sourceLang: sourceLang,
       targetLang: targetLang,
+      isImageTranslation: isImageTranslation,
     );
     if (success) await loadHistory();
     return success;

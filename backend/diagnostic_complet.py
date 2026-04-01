@@ -142,7 +142,7 @@ elif count_ar > 0:
     print("\n SOLUTION:")
     print("   1. Remplacez main.py par main_CORRECTED.py")
     print("   2. Redémarrez le backend")
-    print("   3. Testez: http://192.168.11.102:8000/monuments?lang=ar")
+    print("   3. Testez: http://100.81.116.14:8000/monuments?lang=ar")
     
 else:
     print("\n  SITUATION PARTIELLE")

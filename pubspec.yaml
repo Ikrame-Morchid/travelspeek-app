@@ -39,11 +39,11 @@ dependencies:
   isar_flutter_libs: ^3.1.0+1
   
   # SQLite - Base de données conversations (historique chatbot)
-  sqflite: ^2.3.0              # ✅ NOUVEAU pour historique
+  sqflite: ^2.3.0
   
   # Path Provider
   path_provider: ^2.1.2
-  path: ^1.8.3                 # ✅ Dépendance de sqflite
+  path: ^1.8.3
 
   # ────────────────────────────────────────────────────
   # 💾 PRÉFÉRENCES & STOCKAGE SÉCURISÉ
@@ -110,7 +110,8 @@ dependencies:
   # ────────────────────────────────────────────────────
   # 🆔 UTILITAIRES
   # ────────────────────────────────────────────────────
-  uuid: ^4.1.0                 # ✅ NOUVEAU pour IDs conversations
+  uuid: ^4.1.0
+  share_plus: ^7.2.1        # ✅ Pour partager les traductions
 
 # ══════════════════════════════════════════════════════
 # DÉPENDANCES DE DÉVELOPPEMENT
@@ -127,6 +128,20 @@ dev_dependencies:
   # Linting
   flutter_lints: ^3.0.1
 
+  # ✅ AJOUT : Icône de l'application
+  flutter_launcher_icons: ^0.13.1
+
+# ══════════════════════════════════════════════════════
+# ✅ AJOUT : CONFIGURATION ICÔNE APP
+# ══════════════════════════════════════════════════════
+
+flutter_launcher_icons:
+  android: true
+  ios: true
+  image_path: "assets/icon/app_icon.png"
+  adaptive_icon_background: "#2D5A55"
+  adaptive_icon_foreground: "assets/icon/app_icon.png"
+
 # ══════════════════════════════════════════════════════
 # CONFIGURATION FLUTTER
 # ══════════════════════════════════════════════════════
@@ -139,7 +154,7 @@ flutter:
   assets:
     - assets/images/
     - assets/animations/
-    - assets/icons/
+    - assets/icon/          # ✅ AJOUT : dossier icône app
 
   # ── Fonts ─────────────────────────────────────────────
   # Décommentez si vous avez des polices personnalisées
@@ -174,5 +189,8 @@ flutter:
 #    - NSMicrophoneUsageDescription
 #    - NSCameraUsageDescription
 #    - NSPhotoLibraryUsageDescription
+#
+# 6. Pour générer les icônes :  ✅ AJOUT
+#    dart run flutter_launcher_icons
 #
 # ══════════════════════════════════════════════════════

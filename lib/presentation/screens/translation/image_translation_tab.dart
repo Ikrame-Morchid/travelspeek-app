@@ -1,9 +1,12 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:image_picker/image_picker.dart';
+import 'package:provider/provider.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/l10n/string_extensions.dart';
+import '../../providers/history_provider.dart';
 import 'translation_cubit.dart';
 
 class ImageTranslationTab extends StatefulWidget {
@@ -16,7 +19,7 @@ class ImageTranslationTab extends StatefulWidget {
 class _ImageTranslationTabState extends State<ImageTranslationTab>
     with TickerProviderStateMixin {
   File? _selectedImage;
-  String _sourceLanguage = 'auto';
+  String _sourceLanguage = 'en';
   String _targetLanguage = 'fr';
   bool _hateSpeechDetection = true;
   bool _enhance = true;
@@ -27,13 +30,12 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
   late Animation<double> _pulseAnimation;
 
   Map<String, String> get _availableLanguages => {
-    'auto': 'auto_detect'.tr(context),
-    'ar': 'العربية',
-    'en': 'English',
-    'fr': 'Français',
-    'es': 'Español',
-    'de': 'Deutsch',
-  };
+        'ar': 'العربية',
+        'en': 'English',
+        'fr': 'Français',
+        'es': 'Español',
+        'de': 'Deutsch',
+      };
 
   @override
   void initState() {
@@ -43,7 +45,8 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
       duration: const Duration(milliseconds: 1200),
     )..repeat(reverse: true);
     _pulseAnimation = Tween<double>(begin: 0.85, end: 1.0).animate(
-      CurvedAnimation(parent: _pulseController, curve: Curves.easeInOut),
+      CurvedAnimation(
+          parent: _pulseController, curve: Curves.easeInOut),
     );
   }
 
@@ -57,7 +60,9 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     try {
       final XFile? photo = await _picker.pickImage(
         source: ImageSource.camera,
-        maxWidth: 1920, maxHeight: 1080, imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
       );
       if (photo != null) {
         setState(() => _selectedImage = File(photo.path));
@@ -72,7 +77,9 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     try {
       final XFile? image = await _picker.pickImage(
         source: ImageSource.gallery,
-        maxWidth: 1920, maxHeight: 1080, imageQuality: 85,
+        maxWidth: 1920,
+        maxHeight: 1080,
+        imageQuality: 85,
       );
       if (image != null) {
         setState(() => _selectedImage = File(image.path));
@@ -89,11 +96,11 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
       return;
     }
     context.read<TranslationCubit>().translateImage(
-      imageFile: _selectedImage!,
-      sourceLang: _sourceLanguage,
-      targetLang: _targetLanguage,
-      enhance: _enhance,
-    );
+          imageFile: _selectedImage!,
+          sourceLang: _sourceLanguage,
+          targetLang: _targetLanguage,
+          enhance: _enhance,
+        );
   }
 
   void _showSnack(String msg, Color color) {
@@ -102,15 +109,15 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
       content: Text(msg),
       backgroundColor: color,
       duration: const Duration(seconds: 2),
+      behavior: SnackBarBehavior.floating,
     ));
   }
 
   @override
   Widget build(BuildContext context) {
     final theme = Theme.of(context);
-    final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return BlocListener<TranslationCubit, TranslationState>(
       listener: (context, state) {
         if (state is TranslationError) {
@@ -118,6 +125,17 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
             '❌ ${state.errorKey.tr(context).replaceAll('{error}', state.errorDetail)}',
             Colors.red,
           );
+        }
+        // ✅ Sauvegarder la traduction image dans l'historique
+        if (state is ImageTranslationSuccess &&
+            state.extractedText.isNotEmpty) {
+          context.read<HistoryProvider>().addTranslationToHistory(
+                sourceText: state.extractedText,
+                translatedText: state.translatedText,
+                sourceLang: state.sourceLang.toUpperCase(),
+                targetLang: state.targetLang.toUpperCase(),
+                isImageTranslation: true,
+              );
         }
       },
       child: BlocBuilder<TranslationCubit, TranslationState>(
@@ -134,13 +152,15 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                 _buildLanguageSelector(),
                 const SizedBox(height: 16),
                 Row(children: [
-                  Expanded(child: _buildActionButton(
+                  Expanded(
+                      child: _buildActionButton(
                     icon: Icons.camera_alt_outlined,
                     label: 'take_photo'.tr(context),
                     onTap: _takePhoto,
                   )),
                   const SizedBox(width: 10),
-                  Expanded(child: _buildActionButton(
+                  Expanded(
+                      child: _buildActionButton(
                     icon: Icons.photo_library_outlined,
                     label: 'gallery'.tr(context),
                     onTap: _pickImage,
@@ -160,7 +180,8 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                   const SizedBox(height: 12),
                   _buildTranslationResult(state),
                   const SizedBox(height: 12),
-                  if (_hateSpeechDetection) _buildHateSpeechCard(state),
+                  if (_hateSpeechDetection)
+                    _buildHateSpeechCard(state),
                   const SizedBox(height: 30),
                 ],
               ],
@@ -174,14 +195,17 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
   Widget _buildOptionsCard() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
+      padding:
+          const EdgeInsets.symmetric(horizontal: 14, vertical: 10),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 8)
+        ],
       ),
       child: Column(children: [
         _buildToggleRow(
@@ -192,14 +216,18 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
           value: _enhance,
           onChanged: (v) => setState(() => _enhance = v),
         ),
-        Divider(height: 14, thickness: 0.5, color: theme.dividerColor),
+        Divider(
+            height: 14,
+            thickness: 0.5,
+            color: theme.dividerColor),
         _buildToggleRow(
           icon: Icons.shield_outlined,
           iconBg: const Color(0xFFFFEBEE),
           iconColor: const Color(0xFFE57373),
           title: 'hate_speech_detection'.tr(context),
           value: _hateSpeechDetection,
-          onChanged: (v) => setState(() => _hateSpeechDetection = v),
+          onChanged: (v) =>
+              setState(() => _hateSpeechDetection = v),
         ),
       ]),
     );
@@ -216,10 +244,11 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
   }) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Row(children: [
       Container(
-        width: 36, height: 36,
+        width: 36,
+        height: 36,
         decoration: BoxDecoration(
             color: iconBg, borderRadius: BorderRadius.circular(9)),
         child: Icon(icon, color: iconColor, size: 19),
@@ -227,16 +256,24 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
       const SizedBox(width: 10),
       Expanded(
         child: subtitle != null
-            ? Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                Text(title, style: TextStyle(
-                    fontSize: 13, fontWeight: FontWeight.w600,
+            ? Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                    Text(title,
+                        style: TextStyle(
+                            fontSize: 13,
+                            fontWeight: FontWeight.w600,
+                            color: colorScheme.onSurface)),
+                    Text(subtitle,
+                        style: TextStyle(
+                            fontSize: 11,
+                            color: AppColors.textSecondary)),
+                  ])
+            : Text(title,
+                style: TextStyle(
+                    fontSize: 13,
+                    fontWeight: FontWeight.w600,
                     color: colorScheme.onSurface)),
-                Text(subtitle, style: TextStyle(
-                    fontSize: 11, color: AppColors.textSecondary)),
-              ])
-            : Text(title, style: TextStyle(
-                fontSize: 13, fontWeight: FontWeight.w600,
-                color: colorScheme.onSurface)),
       ),
       Transform.scale(
         scale: 0.85,
@@ -251,7 +288,8 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
 
   Widget _buildLanguageSelector() {
     return Row(children: [
-      Expanded(child: _buildLangButton(_sourceLanguage, isSource: true)),
+      Expanded(
+          child: _buildLangButton(_sourceLanguage, isSource: true)),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 10),
         child: GestureDetector(
@@ -261,39 +299,46 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
             _targetLanguage = tmp;
           }),
           child: Container(
-            width: 36, height: 36,
+            width: 36,
+            height: 36,
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
             ),
-            child: Icon(Icons.swap_horiz, color: AppColors.primary),
+            child:
+                Icon(Icons.swap_horiz, color: AppColors.primary),
           ),
         ),
       ),
-      Expanded(child: _buildLangButton(_targetLanguage, isSource: false)),
+      Expanded(
+          child:
+              _buildLangButton(_targetLanguage, isSource: false)),
     ]);
   }
 
   Widget _buildLangButton(String code, {required bool isSource}) {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return GestureDetector(
       onTap: () => _showLanguagePicker(isSource: isSource),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 12),
+        padding: const EdgeInsets.symmetric(
+            horizontal: 12, vertical: 12),
         decoration: BoxDecoration(
           color: colorScheme.surface,
           borderRadius: BorderRadius.circular(10),
-          border: Border.all(color: AppColors.primary.withOpacity(0.25)),
+          border: Border.all(
+              color: AppColors.primary.withOpacity(0.25)),
         ),
         child: Row(children: [
           Icon(Icons.language, size: 18, color: AppColors.primary),
           const SizedBox(width: 6),
-          Expanded(child: Text(
+          Expanded(
+              child: Text(
             _availableLanguages[code] ?? code,
             style: TextStyle(
-                fontSize: 13, 
+                fontSize: 13,
                 fontWeight: FontWeight.w500,
                 color: colorScheme.onSurface),
             overflow: TextOverflow.ellipsis,
@@ -309,21 +354,25 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
       builder: (_) => Container(
         decoration: BoxDecoration(
           color: colorScheme.surface,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
+          borderRadius:
+              const BorderRadius.vertical(top: Radius.circular(20)),
         ),
         child: Column(mainAxisSize: MainAxisSize.min, children: [
           Container(
             margin: const EdgeInsets.only(top: 12),
-            width: 40, height: 4,
+            width: 40,
+            height: 4,
             decoration: BoxDecoration(
-                color: isDark ? Colors.grey[700] : Colors.grey[300],
+                color: isDark
+                    ? Colors.grey[700]
+                    : Colors.grey[300],
                 borderRadius: BorderRadius.circular(2)),
           ),
           const SizedBox(height: 16),
@@ -332,7 +381,7 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                 ? 'source_language'.tr(context)
                 : 'target_language'.tr(context),
             style: TextStyle(
-                fontSize: 17, 
+                fontSize: 17,
                 fontWeight: FontWeight.bold,
                 color: colorScheme.onSurface),
           ),
@@ -344,17 +393,25 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
             return ListTile(
               leading: Icon(Icons.language,
                   color: sel ? AppColors.primary : Colors.grey),
-              title: Text(e.value, style: TextStyle(
-                color: sel ? AppColors.primary : colorScheme.onSurface,
-                fontWeight: sel ? FontWeight.bold : FontWeight.normal,
-              )),
+              title: Text(e.value,
+                  style: TextStyle(
+                    color: sel
+                        ? AppColors.primary
+                        : colorScheme.onSurface,
+                    fontWeight: sel
+                        ? FontWeight.bold
+                        : FontWeight.normal,
+                  )),
               trailing: sel
-                  ? Icon(Icons.check_circle, color: AppColors.primary)
+                  ? Icon(Icons.check_circle,
+                      color: AppColors.primary)
                   : null,
               onTap: () {
                 setState(() {
-                  if (isSource) _sourceLanguage = e.key;
-                  else _targetLanguage = e.key;
+                  if (isSource)
+                    _sourceLanguage = e.key;
+                  else
+                    _targetLanguage = e.key;
                 });
                 Navigator.pop(context);
               },
@@ -378,17 +435,22 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
         decoration: BoxDecoration(
           color: AppColors.primary,
           borderRadius: BorderRadius.circular(12),
-          boxShadow: [BoxShadow(
-            color: AppColors.primary.withOpacity(0.3),
-            blurRadius: 8, offset: const Offset(0, 4),
-          )],
+          boxShadow: [
+            BoxShadow(
+              color: AppColors.primary.withOpacity(0.3),
+              blurRadius: 8,
+              offset: const Offset(0, 4),
+            )
+          ],
         ),
         child: Column(children: [
           Icon(icon, color: Colors.white, size: 28),
           const SizedBox(height: 6),
-          Text(label, style: const TextStyle(
-              color: Colors.white, fontSize: 12,
-              fontWeight: FontWeight.w600)),
+          Text(label,
+              style: const TextStyle(
+                  color: Colors.white,
+                  fontSize: 12,
+                  fontWeight: FontWeight.w600)),
         ]),
       ),
     );
@@ -398,7 +460,7 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       width: double.infinity,
       height: 220,
@@ -406,9 +468,12 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-            color: isDark ? Colors.grey[700]! : Colors.grey.shade200),
-        boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+            color:
+                isDark ? Colors.grey[700]! : Colors.grey.shade200),
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 8)
+        ],
       ),
       child: _selectedImage != null
           ? Stack(children: [
@@ -426,19 +491,24 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                     color: Colors.black.withOpacity(0.45),
                     child: Center(
                       child: Column(
-                        mainAxisAlignment: MainAxisAlignment.center,
+                        mainAxisAlignment:
+                            MainAxisAlignment.center,
                         children: [
                           ScaleTransition(
                             scale: _pulseAnimation,
                             child: Container(
-                              width: 48, height: 48,
+                              width: 48,
+                              height: 48,
                               decoration: BoxDecoration(
-                                color: Colors.white.withOpacity(0.15),
+                                color: Colors.white
+                                    .withOpacity(0.15),
                                 shape: BoxShape.circle,
                               ),
                               child: const Icon(
-                                  Icons.document_scanner_outlined,
-                                  color: Colors.white, size: 24),
+                                  Icons
+                                      .document_scanner_outlined,
+                                  color: Colors.white,
+                                  size: 24),
                             ),
                           ),
                           const SizedBox(height: 8),
@@ -446,7 +516,8 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                               style: const TextStyle(
                                   color: Colors.white,
                                   fontSize: 12,
-                                  fontWeight: FontWeight.w600)),
+                                  fontWeight:
+                                      FontWeight.w600)),
                         ],
                       ),
                     ),
@@ -454,11 +525,14 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                 ),
               if (!isLoading)
                 Positioned(
-                  top: 8, right: 8,
+                  top: 8,
+                  right: 8,
                   child: GestureDetector(
-                    onTap: () => setState(() => _selectedImage = null),
+                    onTap: () =>
+                        setState(() => _selectedImage = null),
                     child: Container(
-                      width: 28, height: 28,
+                      width: 28,
+                      height: 28,
                       decoration: const BoxDecoration(
                         color: Colors.black54,
                         shape: BoxShape.circle,
@@ -469,20 +543,27 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                   ),
                 ),
             ])
-          : Column(mainAxisAlignment: MainAxisAlignment.center, children: [
-              Icon(Icons.add_photo_alternate_outlined,
-                  size: 56, 
-                  color: isDark ? Colors.grey[700] : Colors.grey[300]),
-              const SizedBox(height: 10),
-              Text('select_or_take_photo'.tr(context),
-                  style: TextStyle(
-                      fontSize: 13, color: AppColors.textSecondary)),
-              const SizedBox(height: 4),
-              Text('supported_formats'.tr(context),
-                  style: TextStyle(
-                      fontSize: 11, 
-                      color: isDark ? Colors.grey[500] : Colors.grey[400])),
-            ]),
+          : Column(
+              mainAxisAlignment: MainAxisAlignment.center,
+              children: [
+                Icon(Icons.add_photo_alternate_outlined,
+                    size: 56,
+                    color: isDark
+                        ? Colors.grey[700]
+                        : Colors.grey[300]),
+                const SizedBox(height: 10),
+                Text('select_or_take_photo'.tr(context),
+                    style: TextStyle(
+                        fontSize: 13,
+                        color: AppColors.textSecondary)),
+                const SizedBox(height: 4),
+                Text('supported_formats'.tr(context),
+                    style: TextStyle(
+                        fontSize: 11,
+                        color: isDark
+                            ? Colors.grey[500]
+                            : Colors.grey[400])),
+              ]),
     );
   }
 
@@ -494,8 +575,9 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
       child: ElevatedButton(
         onPressed: isLoading ? null : _translateImage,
         style: ElevatedButton.styleFrom(
-          backgroundColor:
-              _selectedImage != null ? AppColors.primary : Colors.grey,
+          backgroundColor: _selectedImage != null
+              ? AppColors.primary
+              : Colors.grey,
           foregroundColor: Colors.white,
           elevation: 0,
           shape: RoundedRectangleBorder(
@@ -505,7 +587,8 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
         ),
         child: isLoading
             ? const SizedBox(
-                width: 20, height: 20,
+                width: 20,
+                height: 20,
                 child: CircularProgressIndicator(
                     strokeWidth: 2, color: Colors.white))
             : Row(
@@ -515,13 +598,11 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                   const Icon(Icons.translate,
                       size: 20, color: Colors.white),
                   const SizedBox(width: 8),
-                  Text(
-                    'translate_image'.tr(context),
-                    style: const TextStyle(
-                        fontSize: 15,
-                        fontWeight: FontWeight.w700,
-                        color: Colors.white),
-                  ),
+                  Text('translate_image'.tr(context),
+                      style: const TextStyle(
+                          fontSize: 15,
+                          fontWeight: FontWeight.w700,
+                          color: Colors.white)),
                 ],
               ),
       ),
@@ -531,20 +612,23 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
   Widget _buildLoadingSteps() {
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
-    
+
     return Container(
       padding: const EdgeInsets.all(20),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 8)
+        ],
       ),
       child: Column(children: [
         ScaleTransition(
           scale: _pulseAnimation,
           child: Container(
-            width: 56, height: 56,
+            width: 56,
+            height: 56,
             decoration: BoxDecoration(
               color: AppColors.primary.withOpacity(0.1),
               shape: BoxShape.circle,
@@ -576,14 +660,18 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     );
   }
 
-  Widget _buildStep(int num, IconData icon, String label, bool active) {
+  Widget _buildStep(
+      int num, IconData icon, String label, bool active) {
     final theme = Theme.of(context);
     final isDark = theme.brightness == Brightness.dark;
-    final color = active ? AppColors.primary : (isDark ? Colors.grey[600]! : Colors.grey[400]!);
-    
+    final color = active
+        ? AppColors.primary
+        : (isDark ? Colors.grey[600]! : Colors.grey[400]!);
+
     return Row(children: [
       Container(
-        width: 32, height: 32,
+        width: 32,
+        height: 32,
         decoration: BoxDecoration(
           color: active
               ? AppColors.primary.withOpacity(0.1)
@@ -592,23 +680,28 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
           border: Border.all(
             color: active
                 ? AppColors.primary.withOpacity(0.4)
-                : (isDark ? Colors.grey[700]! : Colors.grey[300]!),
+                : (isDark
+                    ? Colors.grey[700]!
+                    : Colors.grey[300]!),
           ),
         ),
         child: Icon(icon, size: 16, color: color),
       ),
       const SizedBox(width: 10),
-      Text(label, style: TextStyle(
-        fontSize: 13,
-        fontWeight: active ? FontWeight.w600 : FontWeight.normal,
-        color: active 
-            ? theme.colorScheme.onSurface 
-            : (isDark ? Colors.grey[600] : Colors.grey[400]),
-      )),
+      Text(label,
+          style: TextStyle(
+            fontSize: 13,
+            fontWeight:
+                active ? FontWeight.w600 : FontWeight.normal,
+            color: active
+                ? theme.colorScheme.onSurface
+                : (isDark ? Colors.grey[600] : Colors.grey[400]),
+          )),
       const Spacer(),
       if (active)
         SizedBox(
-          width: 14, height: 14,
+          width: 14,
+          height: 14,
           child: CircularProgressIndicator(
             strokeWidth: 2,
             valueColor:
@@ -620,12 +713,11 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
 
   Widget _buildStepConnector() {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
     return Padding(
       padding: const EdgeInsets.only(left: 15, top: 3, bottom: 3),
       child: Container(
-          width: 2, 
-          height: 12, 
+          width: 2,
+          height: 12,
           color: isDark ? Colors.grey[800] : Colors.grey[200]),
     );
   }
@@ -641,9 +733,11 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     }
     return _buildResultCard(
       icon: Icons.document_scanner_outlined,
-      tag: '${state.sourceLang.toUpperCase()} · ${'text'.tr(context)} · ${state.totalBlocks} bloc${state.totalBlocks > 1 ? "s" : ""}',
+      tag:
+          '${state.sourceLang.toUpperCase()} · ${'text'.tr(context)} · ${state.totalBlocks} bloc${state.totalBlocks > 1 ? "s" : ""}',
       text: state.extractedText,
       tagColor: Colors.blueAccent,
+      showCopy: false,
     );
   }
 
@@ -651,7 +745,8 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     if (state.translatedText.isEmpty) return const SizedBox();
     return _buildResultCard(
       icon: Icons.translate_outlined,
-      tag: '${state.targetLang.toUpperCase()} · ${'translation'.tr(context)}',
+      tag:
+          '${state.targetLang.toUpperCase()} · ${'translation'.tr(context)}',
       text: state.translatedText,
       tagColor: AppColors.primary,
       showCopy: true,
@@ -668,22 +763,24 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     final theme = Theme.of(context);
     final colorScheme = theme.colorScheme;
     final isDark = theme.brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
         color: colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
-        boxShadow: [BoxShadow(
-            color: Colors.black.withOpacity(0.04), blurRadius: 8)],
+        boxShadow: [
+          BoxShadow(
+              color: Colors.black.withOpacity(0.04), blurRadius: 8)
+        ],
       ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
         Row(children: [
           Container(
-            padding:
-                const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            padding: const EdgeInsets.symmetric(
+                horizontal: 8, vertical: 4),
             decoration: BoxDecoration(
               color: tagColor.withOpacity(0.1),
               borderRadius: BorderRadius.circular(8),
@@ -691,20 +788,26 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
             child: Row(mainAxisSize: MainAxisSize.min, children: [
               Icon(icon, size: 13, color: tagColor),
               const SizedBox(width: 5),
-              Text(tag, style: TextStyle(
-                  fontSize: 11, color: tagColor,
-                  fontWeight: FontWeight.w700)),
+              Text(tag,
+                  style: TextStyle(
+                      fontSize: 11,
+                      color: tagColor,
+                      fontWeight: FontWeight.w700)),
             ]),
           ),
           const Spacer(),
           if (showCopy)
             GestureDetector(
-              onTap: () =>
-                  _showSnack('text_copied'.tr(context), Colors.green),
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: text));
+                _showSnack('text_copied'.tr(context), Colors.green);
+              },
               child: Container(
                 padding: const EdgeInsets.all(6),
                 decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[800] : Colors.grey[100],
+                  color: isDark
+                      ? Colors.grey[800]
+                      : Colors.grey[100],
                   borderRadius: BorderRadius.circular(8),
                 ),
                 child: Icon(Icons.copy_outlined,
@@ -713,10 +816,11 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
             ),
         ]),
         const SizedBox(height: 12),
-        Text(text, style: TextStyle(
-            fontSize: 15,
-            color: colorScheme.onSurface,
-            height: 1.5)),
+        Text(text,
+            style: TextStyle(
+                fontSize: 15,
+                color: colorScheme.onSurface,
+                height: 1.5)),
       ]),
     );
   }
@@ -730,8 +834,12 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
 
     final color = isOffensive ? Colors.red : Colors.green;
     final bgColor = isOffensive
-        ? (isDark ? const Color(0xFF3D1A1A) : const Color(0xFFFFEBEE))
-        : (isDark ? const Color(0xFF1A3D1A) : const Color(0xFFE8F5E9));
+        ? (isDark
+            ? const Color(0xFF3D1A1A)
+            : const Color(0xFFFFEBEE))
+        : (isDark
+            ? const Color(0xFF1A3D1A)
+            : const Color(0xFFE8F5E9));
     final icon = isOffensive
         ? Icons.dangerous_outlined
         : Icons.verified_user_outlined;
@@ -752,17 +860,21 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
           children: [
         Row(children: [
           Container(
-            width: 32, height: 32,
+            width: 32,
+            height: 32,
             decoration: BoxDecoration(
               color: color.withOpacity(0.12),
               shape: BoxShape.circle,
             ),
-            child: Icon(Icons.shield_outlined, size: 17, color: color),
+            child: Icon(Icons.shield_outlined,
+                size: 17, color: color),
           ),
           const SizedBox(width: 10),
           Text('content_analysis'.tr(context),
-              style: TextStyle(fontSize: 13,
-                  fontWeight: FontWeight.w700, color: color)),
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color)),
           const Spacer(),
           Container(
             padding: const EdgeInsets.symmetric(
@@ -771,36 +883,45 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
               color: color.withOpacity(0.15),
               borderRadius: BorderRadius.circular(20),
             ),
-            child: Text(badge, style: TextStyle(
-                fontSize: 10,
-                fontWeight: FontWeight.bold,
-                color: color)),
+            child: Text(badge,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: color)),
           ),
         ]),
         const SizedBox(height: 10),
-        Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
+        Row(crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
           Icon(icon, size: 15, color: color),
           const SizedBox(width: 6),
-          Expanded(child: Text(message, style: TextStyle(
-              fontSize: 13, color: color, height: 1.4))),
+          Expanded(
+              child: Text(message,
+                  style: TextStyle(
+                      fontSize: 13, color: color, height: 1.4))),
         ]),
         if (words.isNotEmpty) ...[
           const SizedBox(height: 10),
           Wrap(
-            spacing: 6, runSpacing: 4,
-            children: words.map((w) => Container(
-              padding: const EdgeInsets.symmetric(
-                  horizontal: 8, vertical: 3),
-              decoration: BoxDecoration(
-                color: color.withOpacity(0.1),
-                borderRadius: BorderRadius.circular(10),
-                border: Border.all(color: color.withOpacity(0.3)),
-              ),
-              child: Text(w, style: TextStyle(
-                  fontSize: 10,
-                  color: color,
-                  fontWeight: FontWeight.w600)),
-            )).toList(),
+            spacing: 6,
+            runSpacing: 4,
+            children: words
+                .map((w) => Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 8, vertical: 3),
+                      decoration: BoxDecoration(
+                        color: color.withOpacity(0.1),
+                        borderRadius: BorderRadius.circular(10),
+                        border: Border.all(
+                            color: color.withOpacity(0.3)),
+                      ),
+                      child: Text(w,
+                          style: TextStyle(
+                              fontSize: 10,
+                              color: color,
+                              fontWeight: FontWeight.w600)),
+                    ))
+                .toList(),
           ),
         ],
         if (isOffensive && state.censoredText.isNotEmpty) ...[
@@ -812,12 +933,15 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
                 size: 13, color: color),
             const SizedBox(width: 6),
             Text('censored_text'.tr(context),
-                style: TextStyle(fontSize: 11, color: color,
+                style: TextStyle(
+                    fontSize: 11,
+                    color: color,
                     fontWeight: FontWeight.w600)),
           ]),
           const SizedBox(height: 4),
-          Text(state.censoredText, style: TextStyle(
-              fontSize: 13, color: color.withOpacity(0.8))),
+          Text(state.censoredText,
+              style: TextStyle(
+                  fontSize: 13, color: color.withOpacity(0.8))),
         ],
       ]),
     );
@@ -830,7 +954,7 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
     required String message,
   }) {
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    
+
     return Container(
       padding: const EdgeInsets.all(14),
       decoration: BoxDecoration(
@@ -841,16 +965,19 @@ class _ImageTranslationTabState extends State<ImageTranslationTab>
       child: Row(children: [
         Icon(icon, color: color, size: 22),
         const SizedBox(width: 12),
-        Expanded(child: Column(
-            crossAxisAlignment: CrossAxisAlignment.start,
-            children: [
-          Text(title, style: TextStyle(
-              fontSize: 13,
-              fontWeight: FontWeight.w700,
-              color: color)),
+        Expanded(
+            child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+          Text(title,
+              style: TextStyle(
+                  fontSize: 13,
+                  fontWeight: FontWeight.w700,
+                  color: color)),
           const SizedBox(height: 2),
-          Text(message, style: TextStyle(
-              fontSize: 12, color: color.withOpacity(0.8))),
+          Text(message,
+              style: TextStyle(
+                  fontSize: 12, color: color.withOpacity(0.8))),
         ])),
       ]),
     );

@@ -32,7 +32,7 @@ class VoiceTranslationResult {
 
 class TranslationRepository {
 
-  static const String BASE_URL = "http://192.168.11.102:8000";
+  static const String BASE_URL = "http://100.81.116.14:8000";
   
   final Dio _dio = Dio(BaseOptions(
     baseUrl: BASE_URL,

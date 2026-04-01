@@ -538,6 +538,6 @@ if __name__ == "__main__":
     import uvicorn
     print("=" * 60)
     print("🚀 TravelSpeek API v6.1.0")
-    print(f"📝 Docs : http://192.168.11.102:8000/docs")
+    print(f"📝 Docs : http://100.81.116.14:8000/docs")
     print("=" * 60)
     uvicorn.run(app, host="0.0.0.0", port=8000)

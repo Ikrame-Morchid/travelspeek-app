@@ -294,6 +294,24 @@ class AppTranslations {
       'ar': 'يلغي',
       'es': 'Cancelar',
     },
+    'delete_item': {
+      'en': 'Delete Item',
+      'fr': 'Supprimer l\'élément',
+      'ar': 'حذف العنصر',
+      'es': 'Eliminar artículo',
+    },
+    'are_you_sure_you_want_to_delete_this_item': {
+      'en': 'Are you sure you want to delete this item?',
+      'fr': 'Êtes-vous sûr de vouloir supprimer cet élément?',
+      'ar': 'هل أنت متأكد أنك تريد حذف هذا العنصر؟',
+      'es': '¿Estás seguro de que quieres eliminar este elemento?',
+    },
+    'item_deleted': {
+      'en': 'Item deleted',
+      'fr': 'Article supprimé',
+      'ar': 'تم حذف العنصر',
+      'es': 'Artículo eliminado',
+    },
     'casablanca_monuments': {
       'en': 'Casablanca monuments',
       'fr': 'Casablanca monuments',
@@ -410,6 +428,12 @@ class AppTranslations {
       'es': 'Elige de la galería',
     },
    
+    'clear': {
+      'en': 'Clear',
+      'fr': 'Effacer',
+      'ar': 'واضح',
+      'es': 'Despejar',
+    },
     'clear_history': {
       'en': 'Clear History?',
       'fr': 'Effacer l\'historique ?',

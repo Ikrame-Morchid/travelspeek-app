@@ -2,7 +2,7 @@
 
 class ApiConfig {
   /// REMPLACEZ par l'IP de votre ordinateur
-  static const String baseUrl = 'http://192.168.11.102:8000';
+  static const String baseUrl = 'http://100.81.116.14:8000';
   
   // ===== AUTH ENDPOINTS =====
   static const String register = '$baseUrl/auth/register';

@@ -5,9 +5,7 @@ import '../services/audio_recorder_service.dart';
 import '../services/audio_player_service.dart';
 
 
-
-const String kBaseUrl = "http://192.168.11.102:8000";
-
+const String kBaseUrl = "http://100.81.116.14:8000";
 
 class HateSpeechResult {
   final bool         isHateSpeech;

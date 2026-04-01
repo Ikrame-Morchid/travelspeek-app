@@ -175,7 +175,7 @@ elif has_ar and ar_count == 0:
 else:
     print("\n TOUT EST OK! Les traductions sont présentes!")
     print("\n Vous pouvez maintenant:")
-    print("   - Tester l'API: http://192.168.11.102:8000/monuments?lang=ar")
+    print("   - Tester l'API: http://100.81.116.14:8000/monuments?lang=ar")
     print("   - Les descriptions devraient être en arabe!")
 
 print("="*70 + "\n")

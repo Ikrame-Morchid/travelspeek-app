@@ -10,7 +10,7 @@ import '../database/conversation_database.dart';
 
 class AuthService {
 
-  static const String baseUrl = 'http://192.168.11.102:8000';
+  static const String baseUrl = 'http://100.81.116.14:8000';
   
   final TokenService _tokenService = TokenService.instance;
 

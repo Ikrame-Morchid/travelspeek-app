@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:flutter_bloc/flutter_bloc.dart';
 import 'package:provider/provider.dart';
+import 'package:share_plus/share_plus.dart';
 import '../../../core/constants/app_colors.dart';
 import '../../../core/l10n/string_extensions.dart';
 import '../../../data/repositories/voice_translation_repository.dart';
 import '../../widgets/app_drawer.dart';
 import '../../providers/history_provider.dart';
-import '../../providers/theme_provider.dart'; // ✅ DARK MODE
+import '../../providers/theme_provider.dart';
 import 'translation_cubit.dart';
 import 'image_translation_tab.dart';
 
@@ -65,14 +67,14 @@ class _TranslationScreenState extends State<TranslationScreen>
 
   @override
   Widget build(BuildContext context) {
-    // ✅ DARK MODE
     final isDark = context.watch<ThemeProvider>().isDark;
-    
+
     return BlocProvider.value(
       value: _translationCubit,
       child: Scaffold(
         endDrawer: const AppDrawer(),
-        backgroundColor: isDark ? const Color(0xFF0F1923) : const Color(0xFFF8F9FA), // ✅ DARK
+        backgroundColor:
+            isDark ? const Color(0xFF0F1923) : const Color(0xFFF8F9FA),
         appBar: _buildAppBar(isDark),
         body: Column(children: [
           const SizedBox(height: 16),
@@ -95,15 +97,16 @@ class _TranslationScreenState extends State<TranslationScreen>
 
   PreferredSizeWidget _buildAppBar(bool isDark) {
     return AppBar(
-      backgroundColor: isDark ? const Color(0xFF0F1923) : Colors.white, // ✅ DARK
+      backgroundColor: isDark ? const Color(0xFF0F1923) : Colors.white,
       elevation: 0,
       leading: IconButton(
-        icon: Icon(Icons.arrow_back, color: isDark ? Colors.white : const Color(0xFF2D2D2D)), // ✅ DARK
+        icon: Icon(Icons.arrow_back,
+            color: isDark ? Colors.white : const Color(0xFF2D2D2D)),
         onPressed: () => Navigator.pop(context),
       ),
       title: Text('translation'.tr(context),
           style: TextStyle(
-              color: isDark ? Colors.white : const Color(0xFF2D2D2D), // ✅ DARK
+              color: isDark ? Colors.white : const Color(0xFF2D2D2D),
               fontSize: 18,
               fontWeight: FontWeight.bold)),
       centerTitle: true,
@@ -111,7 +114,8 @@ class _TranslationScreenState extends State<TranslationScreen>
         Builder(
             builder: (ctx) => IconButton(
                   icon: Icon(Icons.more_vert,
-                      color: isDark ? Colors.white : const Color(0xFF2D2D2D)), // ✅ DARK
+                      color:
+                          isDark ? Colors.white : const Color(0xFF2D2D2D)),
                   onPressed: () => Scaffold.of(ctx).openEndDrawer(),
                 )),
       ],
@@ -123,7 +127,7 @@ class _TranslationScreenState extends State<TranslationScreen>
       margin: const EdgeInsets.symmetric(horizontal: 20),
       height: 48,
       decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A2530) : Colors.white, // ✅ DARK
+          color: isDark ? const Color(0xFF1A2530) : Colors.white,
           borderRadius: BorderRadius.circular(24)),
       child: TabBar(
         controller: _tabController,
@@ -132,9 +136,10 @@ class _TranslationScreenState extends State<TranslationScreen>
             borderRadius: BorderRadius.circular(24)),
         dividerColor: Colors.transparent,
         labelColor: Colors.white,
-        unselectedLabelColor: isDark ? Colors.grey[400] : const Color(0xFF2D2D2D), // ✅ DARK
-        labelStyle: const TextStyle(
-            fontSize: 14, fontWeight: FontWeight.w600),
+        unselectedLabelColor:
+            isDark ? Colors.grey[400] : const Color(0xFF2D2D2D),
+        labelStyle:
+            const TextStyle(fontSize: 14, fontWeight: FontWeight.w600),
         tabs: [
           Tab(
               child: Row(
@@ -186,7 +191,8 @@ class _TranslationScreenState extends State<TranslationScreen>
                 const SizedBox(height: 12),
                 Text(
                   'translating'.tr(context),
-                  style: TextStyle(color: isDark ? Colors.grey[400] : Colors.grey), // ✅ DARK
+                  style: TextStyle(
+                      color: isDark ? Colors.grey[400] : Colors.grey),
                 ),
               ]),
 
@@ -198,14 +204,18 @@ class _TranslationScreenState extends State<TranslationScreen>
               Text('tap_to_start_recording'.tr(context),
                   style: TextStyle(
                       fontSize: 14,
-                      color: isDark ? Colors.grey[500] : AppColors.textSecondary)), // ✅ DARK
+                      color: isDark
+                          ? Colors.grey[500]
+                          : AppColors.textSecondary)),
 
             if (state is TranslationError)
               Container(
                 margin: const EdgeInsets.only(top: 20),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                    color: isDark ? Colors.red[900]?.withOpacity(0.3) : Colors.red[50], // ✅ DARK
+                    color: isDark
+                        ? Colors.red[900]?.withOpacity(0.3)
+                        : Colors.red[50],
                     borderRadius: BorderRadius.circular(12)),
                 child: Row(children: [
                   const Icon(Icons.error_outline, color: Colors.red),
@@ -294,7 +304,7 @@ class _TranslationScreenState extends State<TranslationScreen>
         language:
             '${result.detectedLanguage.toUpperCase()} ${'original_label'.tr(context)}',
         text: result.originalText,
-        showFavorite: false,
+        showActions: false,
         onSpeakTap: null,
       ),
       const SizedBox(height: 12),
@@ -304,73 +314,107 @@ class _TranslationScreenState extends State<TranslationScreen>
         language:
             '${result.targetLanguage.toUpperCase()} ${'translation_label'.tr(context)}',
         text: result.translatedText,
-        showFavorite: true,
+        showActions: true,
         onSpeakTap: result.audioUrl != null
             ? () => _translationCubit.playAudio(result.audioUrl!)
             : null,
       ),
       const SizedBox(height: 12),
-      if (_hateSpeechDetection) _buildHateSpeechCard(result.hateSpeech, isDark),
+      if (_hateSpeechDetection)
+        _buildHateSpeechCard(result.hateSpeech, isDark),
       const SizedBox(height: 20),
     ]);
   }
 
   Widget _buildResultCard({
-    required bool isDark, // ✅ DARK
+    required bool isDark,
     required IconData icon,
     required String language,
     required String text,
-    required bool showFavorite,
+    required bool showActions,
     VoidCallback? onSpeakTap,
   }) {
     return Container(
       padding: const EdgeInsets.all(16),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A2530) : Colors.white, // ✅ DARK
+        color: isDark ? const Color(0xFF1A2530) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.04), // ✅ DARK
+              color: Colors.black.withOpacity(isDark ? 0.3 : 0.04),
               blurRadius: 8)
         ],
       ),
       child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+        // ── Header row ──
         Row(children: [
-          Icon(icon, size: 16, color: isDark ? Colors.grey[400] : AppColors.textSecondary), // ✅ DARK
+          Icon(icon,
+              size: 16,
+              color: isDark
+                  ? Colors.grey[400]
+                  : AppColors.textSecondary),
           const SizedBox(width: 6),
           Text(language,
               style: TextStyle(
                   fontSize: 12,
                   fontWeight: FontWeight.w600,
-                  color: isDark ? Colors.grey[400] : AppColors.textSecondary)), // ✅ DARK
-          const Spacer(),
-          if (showFavorite)
-            Icon(Icons.favorite_border,
-                size: 20, color: isDark ? Colors.grey[400] : AppColors.textSecondary), // ✅ DARK
+                  color: isDark
+                      ? Colors.grey[400]
+                      : AppColors.textSecondary)),
+          // ✅ Favoris SUPPRIMÉ
         ]),
         const SizedBox(height: 12),
         Text(text,
             style: TextStyle(
-                fontSize: 15, color: isDark ? Colors.white : const Color(0xFF2D2D2D))), // ✅ DARK
+                fontSize: 15,
+                color: isDark
+                    ? Colors.white
+                    : const Color(0xFF2D2D2D))),
         const SizedBox(height: 12),
+        // ── Actions row ──
         Row(children: [
+          // Bouton audio
           GestureDetector(
             onTap: onSpeakTap,
             child: Icon(Icons.volume_up,
                 size: 20,
                 color: onSpeakTap != null
                     ? AppColors.primary
-                    : (isDark ? Colors.grey[600] : Colors.grey)), // ✅ DARK
+                    : (isDark ? Colors.grey[600] : Colors.grey)),
           ),
           const Spacer(),
-          if (showFavorite) ...[
-            Icon(Icons.copy_outlined,
-                size: 20, color: isDark ? Colors.grey[400] : AppColors.textSecondary), // ✅ DARK
+          // ✅ Bouton COPIER fonctionnel
+          if (showActions) ...[
+            GestureDetector(
+              onTap: () {
+                Clipboard.setData(ClipboardData(text: text));
+                ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+                  content: Text('text_copied'.tr(context)),
+                  backgroundColor: Colors.green,
+                  duration: const Duration(seconds: 2),
+                  behavior: SnackBarBehavior.floating,
+                ));
+              },
+              child: Icon(Icons.copy_outlined,
+                  size: 20,
+                  color: isDark
+                      ? Colors.grey[400]
+                      : AppColors.textSecondary),
+            ),
             const SizedBox(width: 16),
-            Icon(Icons.share_outlined,
-                size: 20, color: isDark ? Colors.grey[400] : AppColors.textSecondary), // ✅ DARK
+            // ✅ Bouton PARTAGER fonctionnel
+            GestureDetector(
+              onTap: () {
+                Share.share(text);
+              },
+              child: Icon(Icons.share_outlined,
+                  size: 20,
+                  color: isDark
+                      ? Colors.grey[400]
+                      : AppColors.textSecondary),
+            ),
           ],
         ]),
       ]),
@@ -380,7 +424,8 @@ class _TranslationScreenState extends State<TranslationScreen>
   Widget _buildHateSpeechCard(HateSpeechResult? hate, bool isDark) {
     final level = hate?.level ?? 'safe';
     final confidence = hate?.confidence ?? 0.0;
-    final message = hate?.message ?? '✅ Aucun contenu offensant détecté';
+    final message =
+        hate?.message ?? '✅ Aucun contenu offensant détecté';
     final categories = hate?.categories ?? <String>[];
     final isHate = hate?.isHateSpeech ?? false;
 
@@ -391,21 +436,30 @@ class _TranslationScreenState extends State<TranslationScreen>
 
     switch (level) {
       case 'danger':
-        bgColor = isDark ? const Color(0xFF3A1F1F) : const Color(0xFFFFEBEE); // ✅ DARK
+        bgColor = isDark
+            ? const Color(0xFF3A1F1F)
+            : const Color(0xFFFFEBEE);
         iconColor = Colors.red;
-        borderColor = isDark ? Colors.red.shade800 : Colors.red.shade200; // ✅ DARK
+        borderColor =
+            isDark ? Colors.red.shade800 : Colors.red.shade200;
         statusIcon = Icons.dangerous_outlined;
         break;
       case 'warning':
-        bgColor = isDark ? const Color(0xFF3A2F1F) : const Color(0xFFFFF8E1); // ✅ DARK
+        bgColor = isDark
+            ? const Color(0xFF3A2F1F)
+            : const Color(0xFFFFF8E1);
         iconColor = Colors.orange;
-        borderColor = isDark ? Colors.orange.shade800 : Colors.orange.shade200; // ✅ DARK
+        borderColor =
+            isDark ? Colors.orange.shade800 : Colors.orange.shade200;
         statusIcon = Icons.warning_amber_rounded;
         break;
       default:
-        bgColor = isDark ? const Color(0xFF1F3A1F) : const Color(0xFFE8F5E9); // ✅ DARK
+        bgColor = isDark
+            ? const Color(0xFF1F3A1F)
+            : const Color(0xFFE8F5E9);
         iconColor = Colors.green;
-        borderColor = isDark ? Colors.green.shade800 : Colors.green.shade200; // ✅ DARK
+        borderColor =
+            isDark ? Colors.green.shade800 : Colors.green.shade200;
         statusIcon = Icons.verified_user_outlined;
     }
 
@@ -448,13 +502,11 @@ class _TranslationScreenState extends State<TranslationScreen>
               color: iconColor.withOpacity(0.15),
               borderRadius: BorderRadius.circular(12),
             ),
-            child: Text(
-              badge,
-              style: TextStyle(
-                  fontSize: 10,
-                  fontWeight: FontWeight.bold,
-                  color: iconColor),
-            ),
+            child: Text(badge,
+                style: TextStyle(
+                    fontSize: 10,
+                    fontWeight: FontWeight.bold,
+                    color: iconColor)),
           ),
         ]),
         const SizedBox(height: 10),
@@ -471,8 +523,8 @@ class _TranslationScreenState extends State<TranslationScreen>
           Text(
             'confidence'
                 .tr(context)
-                .replaceAll('{percent}',
-                    '${(confidence * 100).toInt()}'),
+                .replaceAll(
+                    '{percent}', '${(confidence * 100).toInt()}'),
             style: TextStyle(
                 fontSize: 11,
                 color: iconColor,
@@ -485,7 +537,8 @@ class _TranslationScreenState extends State<TranslationScreen>
             child: LinearProgressIndicator(
               value: confidence,
               backgroundColor: iconColor.withOpacity(0.15),
-              valueColor: AlwaysStoppedAnimation<Color>(iconColor),
+              valueColor:
+                  AlwaysStoppedAnimation<Color>(iconColor),
               minHeight: 6,
             ),
           )),
@@ -521,10 +574,8 @@ class _TranslationScreenState extends State<TranslationScreen>
             Icon(Icons.visibility_off_outlined,
                 size: 14, color: iconColor),
             const SizedBox(width: 6),
-            Text(
-              'censor_text'.tr(context),
-              style: TextStyle(fontSize: 12, color: iconColor),
-            ),
+            Text('censor_text'.tr(context),
+                style: TextStyle(fontSize: 12, color: iconColor)),
             const Spacer(),
             Transform.scale(
                 scale: 0.8,
@@ -544,11 +595,12 @@ class _TranslationScreenState extends State<TranslationScreen>
     return Container(
       padding: const EdgeInsets.all(12),
       decoration: BoxDecoration(
-        color: isDark ? const Color(0xFF1A2530) : Colors.white, // ✅ DARK
+        color: isDark ? const Color(0xFF1A2530) : Colors.white,
         borderRadius: BorderRadius.circular(12),
         boxShadow: [
           BoxShadow(
-              color: Colors.black.withOpacity(isDark ? 0.3 : 0.04), // ✅ DARK
+              color:
+                  Colors.black.withOpacity(isDark ? 0.3 : 0.04),
               blurRadius: 8)
         ],
       ),
@@ -558,7 +610,9 @@ class _TranslationScreenState extends State<TranslationScreen>
             width: 40,
             height: 40,
             decoration: BoxDecoration(
-                color: isDark ? Colors.red[900]?.withOpacity(0.3) : const Color(0xFFFFEBEE), // ✅ DARK
+                color: isDark
+                    ? Colors.red[900]?.withOpacity(0.3)
+                    : const Color(0xFFFFEBEE),
                 borderRadius: BorderRadius.circular(10)),
             child: const Icon(Icons.shield_outlined,
                 color: Color(0xFFE57373), size: 22),
@@ -572,12 +626,16 @@ class _TranslationScreenState extends State<TranslationScreen>
                     style: TextStyle(
                         fontSize: 14,
                         fontWeight: FontWeight.w600,
-                        color: isDark ? Colors.white : const Color(0xFF2D2D2D))), // ✅ DARK
+                        color: isDark
+                            ? Colors.white
+                            : const Color(0xFF2D2D2D))),
                 const SizedBox(height: 2),
                 Text('filter_offensive_content'.tr(context),
                     style: TextStyle(
                         fontSize: 11,
-                        color: isDark ? Colors.grey[500] : AppColors.textSecondary)), // ✅ DARK
+                        color: isDark
+                            ? Colors.grey[500]
+                            : AppColors.textSecondary)),
               ])),
           Switch(
             value: _hateSpeechDetection,
@@ -593,13 +651,17 @@ class _TranslationScreenState extends State<TranslationScreen>
             padding: const EdgeInsets.only(top: 8, left: 52),
             child: Row(children: [
               Icon(Icons.visibility_off_outlined,
-                  size: 15, color: isDark ? Colors.grey[500] : AppColors.textSecondary), // ✅ DARK
+                  size: 15,
+                  color: isDark
+                      ? Colors.grey[500]
+                      : AppColors.textSecondary),
               const SizedBox(width: 6),
-              Text(
-                'auto_censor'.tr(context),
-                style: TextStyle(
-                    fontSize: 12, color: isDark ? Colors.grey[500] : AppColors.textSecondary), // ✅ DARK
-              ),
+              Text('auto_censor'.tr(context),
+                  style: TextStyle(
+                      fontSize: 12,
+                      color: isDark
+                          ? Colors.grey[500]
+                          : AppColors.textSecondary)),
               const Spacer(),
               Transform.scale(
                   scale: 0.8,
@@ -618,7 +680,8 @@ class _TranslationScreenState extends State<TranslationScreen>
   Widget _buildLanguageSelector(bool isDark) {
     return Row(children: [
       Expanded(
-          child: _buildLangButton(_sourceLanguage, isSource: true, isDark: isDark)),
+          child: _buildLangButton(_sourceLanguage,
+              isSource: true, isDark: isDark)),
       Padding(
         padding: const EdgeInsets.symmetric(horizontal: 12),
         child: GestureDetector(
@@ -639,18 +702,20 @@ class _TranslationScreenState extends State<TranslationScreen>
         ),
       ),
       Expanded(
-          child: _buildLangButton(_targetLanguage, isSource: false, isDark: isDark)),
+          child: _buildLangButton(_targetLanguage,
+              isSource: false, isDark: isDark)),
     ]);
   }
 
-  Widget _buildLangButton(String code, {required bool isSource, required bool isDark}) {
+  Widget _buildLangButton(String code,
+      {required bool isSource, required bool isDark}) {
     return GestureDetector(
       onTap: () => _showLanguagePicker(isSource: isSource),
       child: Container(
         padding: const EdgeInsets.symmetric(
             horizontal: 12, vertical: 14),
         decoration: BoxDecoration(
-          color: isDark ? const Color(0xFF1A2530) : Colors.white, // ✅ DARK
+          color: isDark ? const Color(0xFF1A2530) : Colors.white,
           borderRadius: BorderRadius.circular(10),
           border:
               Border.all(color: AppColors.primary.withOpacity(0.2)),
@@ -664,19 +729,24 @@ class _TranslationScreenState extends State<TranslationScreen>
             style: TextStyle(
                 fontSize: 14,
                 fontWeight: FontWeight.w500,
-                color: isDark ? Colors.white : const Color(0xFF2D2D2D)), // ✅ DARK
+                color: isDark
+                    ? Colors.white
+                    : const Color(0xFF2D2D2D)),
             overflow: TextOverflow.ellipsis,
           )),
           Icon(Icons.keyboard_arrow_down,
-              size: 20, color: isDark ? Colors.grey[500] : AppColors.textSecondary), // ✅ DARK
+              size: 20,
+              color: isDark
+                  ? Colors.grey[500]
+                  : AppColors.textSecondary),
         ]),
       ),
     );
   }
 
   void _showLanguagePicker({required bool isSource}) {
-    final isDark = context.read<ThemeProvider>().isDark; // ✅ DARK
-    
+    final isDark = context.read<ThemeProvider>().isDark;
+
     showModalBottomSheet(
       context: context,
       backgroundColor: Colors.transparent,
@@ -687,7 +757,8 @@ class _TranslationScreenState extends State<TranslationScreen>
         minChildSize: 0.4,
         builder: (context, sc) => Container(
           decoration: BoxDecoration(
-            color: isDark ? const Color(0xFF1A2530) : Colors.white, // ✅ DARK
+            color:
+                isDark ? const Color(0xFF1A2530) : Colors.white,
             borderRadius: const BorderRadius.only(
               topLeft: Radius.circular(20),
               topRight: Radius.circular(20),
@@ -699,7 +770,9 @@ class _TranslationScreenState extends State<TranslationScreen>
               width: 40,
               height: 4,
               decoration: BoxDecoration(
-                  color: isDark ? Colors.grey[700] : Colors.grey[300], // ✅ DARK
+                  color: isDark
+                      ? Colors.grey[700]
+                      : Colors.grey[300],
                   borderRadius: BorderRadius.circular(2)),
             ),
             const SizedBox(height: 20),
@@ -710,7 +783,9 @@ class _TranslationScreenState extends State<TranslationScreen>
               style: TextStyle(
                   fontSize: 18,
                   fontWeight: FontWeight.bold,
-                  color: isDark ? Colors.white : const Color(0xFF2D2D2D)), // ✅ DARK
+                  color: isDark
+                      ? Colors.white
+                      : const Color(0xFF2D2D2D)),
             ),
             const SizedBox(height: 20),
             Expanded(
@@ -726,8 +801,11 @@ class _TranslationScreenState extends State<TranslationScreen>
                     : _targetLanguage == code;
                 return ListTile(
                   leading: Icon(Icons.language,
-                      color:
-                          sel ? AppColors.primary : (isDark ? Colors.grey[600] : Colors.grey), // ✅ DARK
+                      color: sel
+                          ? AppColors.primary
+                          : (isDark
+                              ? Colors.grey[600]
+                              : Colors.grey),
                       size: 28),
                   title: Text(name,
                       style: TextStyle(
@@ -737,7 +815,9 @@ class _TranslationScreenState extends State<TranslationScreen>
                               : FontWeight.normal,
                           color: sel
                               ? AppColors.primary
-                              : (isDark ? Colors.white : const Color(0xFF2D2D2D)))), // ✅ DARK
+                              : (isDark
+                                  ? Colors.white
+                                  : const Color(0xFF2D2D2D)))),
                   trailing: sel
                       ? Icon(Icons.check_circle,
                           color: AppColors.primary, size: 24)
@@ -764,7 +844,8 @@ class _TranslationScreenState extends State<TranslationScreen>
 
   Widget _buildBottomNavBar() {
     return Container(
-      margin: const EdgeInsets.only(left: 20, right: 20, bottom: 20),
+      margin:
+          const EdgeInsets.only(left: 20, right: 20, bottom: 20),
       height: 68,
       decoration: BoxDecoration(
         color: const Color(0xFF2D3E45),

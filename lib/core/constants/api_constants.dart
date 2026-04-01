@@ -1,7 +1,7 @@
 class ApiConstants {
   ApiConstants._();
  
-  static const String baseUrl = 'http://192.168.11.102:8000';
+  static const String baseUrl = 'http://100.81.116.14:8000';
   
   static const Duration connectionTimeout = Duration(seconds: 30);
   static const Duration receiveTimeout = Duration(seconds: 30);

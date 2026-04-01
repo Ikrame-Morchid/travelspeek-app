@@ -29,15 +29,16 @@ class HistoryRepository {
     required String translatedText,
     required String sourceLang,
     required String targetLang,
+    bool isImageTranslation = false,
   }) async {
     final userId = await _getCurrentUserId();
     final item = Historique.create(
       type: ActivityType.translation,
       userId: userId,
-      title: sourceText.length > 50
-          ? '${sourceText.substring(0, 50)}...'
-          : sourceText,
-      subtitle: '$sourceLang → $targetLang',
+      title: sourceText,
+      subtitle: isImageTranslation
+          ? '$sourceLang → $targetLang [IMG]'
+          : '$sourceLang → $targetLang',
       details: translatedText,
     );
     return await addToHistory(item);
